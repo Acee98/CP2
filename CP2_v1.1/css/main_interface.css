@@ -1,0 +1,1392 @@
+/* Imports the "Inter" font family from Google Fonts for use across
+   the dashboard interface (user.php, techn.php, admin.php). */
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
+/* Universal reset: removes default margin/padding, normalizes the box
+   model, and sets Inter as the base font for every element. */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Inter";
+}
+
+/* Anchors the page to the full viewport height so .main-wrap (and in
+   turn .showcase / .page-content / .tickets-list) has a real height
+   to grow into, instead of just shrinking to fit its content. */
+html,
+body {
+    height: 100%;
+}
+
+/*
+ * NAV HIGHLIGHT TOKENS
+ * Shared by :hover and .selected so the active page matches hover.
+ */
+:root {
+    --nav-highlight-bg: #bd8084;
+    --nav-highlight-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    --nav-text-color: #610107;
+}
+
+/* Removes the default underline from all links in the dashboard. */
+a {
+    text-decoration: none;
+}
+
+/* Top-level page wrapper: lays the sidebar and main content area out
+   side-by-side using flex (sidebar on the left, .showcase content on
+   the right — see .main-wrap .showcase below). position: relative
+   gives .main-head (now position: fixed/absolute, see below) a
+   positioning context scoped to this wrapper. */
+.main-wrap {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    position: relative;
+}
+
+/*
+ * SIDEBAR CONTAINER (.main-head)
+ * ------------------------------------------------------------------
+ * The collapsible sidebar itself. By default (no "active" class) it
+ * renders at its full expanded width (250px) and fills the full
+ * viewport height. The width transitions smoothly whenever the
+ * "active" class is toggled by behavior.js, producing the
+ * collapse/expand animation.
+ *
+ * OVERLAY BEHAVIOR (position: fixed):
+ * The sidebar is taken out of the normal flex flow and pinned to the
+ * viewport instead. This means that when it expands on hover, it
+ * grows OVER/ON TOP OF the main content (.showcase) — obscuring
+ * whatever sits underneath it (e.g. the "Dashboard" h1) — rather than
+ * pushing that content to the side. z-index ensures it renders above
+ * .showcase. See ".main-wrap .sidebar-spacer" below for how the
+ * layout still reserves room for the collapsed-width rail.
+ */
+.main-wrap .main-head {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 10;
+    width: 250px;
+    height: 100vh;
+    /* Fully opaque again (reverted from the earlier translucent
+       rgba(235, 235, 235, 0.9) version back to a solid #ebebeb). */
+    background-color: #ebebeb;
+    overflow: hidden;
+    transition: width 0.2s ease-in-out;
+    display: flex;
+    flex-direction: column;
+    border-radius: 10px;
+    box-shadow: 0 10px 10px rgba(0, 0, 0, 0.15);
+}
+
+/*
+ * COLLAPSED STATE
+ * ------------------------------------------------------------------
+ * When behavior.js adds the "active" class to .main-head (on page
+ * load, and whenever the mouse leaves the sidebar), the sidebar
+ * shrinks down to a narrow 60px-wide rail showing only icons.
+ */
+.main-wrap .main-head.active {
+    width: 60px;
+}
+
+/*
+ * SIDEBAR SPACER
+ * ------------------------------------------------------------------
+ * Since .main-head is now position: fixed (removed from the flex
+ * flow), .main-wrap would otherwise have no element reserving
+ * horizontal space for it, causing .showcase to render starting at
+ * the very left edge, underneath the sidebar.
+ *
+ * This empty spacer sits in .main-head's old place in the flex flow
+ * and stays permanently at the sidebar's COLLAPSED width (60px) —
+ * it does not grow/shrink with .main-head's hover state, which is
+ * exactly what keeps .showcase content static while the real sidebar
+ * overlays on top of it on hover.
+ *
+ * Markup: a single empty <div class="sidebar-spacer"></div>, placed
+ * as a sibling of <header class="main-head"> inside .main-wrap.
+ */
+.main-wrap .sidebar-spacer {
+    width: 60px;
+    flex-shrink: 0;
+}
+
+/* Inner nav wrapper: stretches to fill the sidebar's full width/height
+   and stacks its children (the <nav class="navbar">) vertically. */
+.main-wrap .main-head .main-nav {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* The <nav class="navbar"> element inside the sidebar: also fills the
+   available space and stacks its content (navbar-nav) vertically. */
+.main-wrap .main-head .main-nav .navbar {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* The .navbar-nav wrapper holds the logo/toggler row and the nav-list
+   below it; stretches to fill the sidebar's full height so the
+   "Logout" link (last nav-list-item) can be pinned to the bottom via
+   margin-top: auto further down. */
+.main-wrap .main-head .main-nav .navbar .navbar-nav {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/*
+ * LOGO ROW
+ * ------------------------------------------------------------------
+ * Contains the ZPGC logo image and the collapse/expand toggler
+ * button, laid out as a row with the logo on the left and the
+ * toggler on the right (space-between). Has a bottom border to
+ * visually separate it from the nav links below. white-space: nowrap
+ * + overflow: hidden keep this row from wrapping awkwardly while the
+ * sidebar width is animating.
+ */
+.main-wrap .main-head .main-nav .navbar .navbar-nav .logo {
+    padding: 15px 20px;
+    border-bottom: 1px solid #610107;
+    overflow: hidden;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 60px;
+    transition: padding 0.2s ease;
+}
+
+/* Logo image sizing, used both in the sidebar and other pages that
+   reuse the .logo class. Transition on opacity allows for a smooth
+   fade if/when its visibility is toggled. */
+.logo img {
+    width: 80px;
+    height: auto;
+    display: block;
+    transition: opacity 0.2s ease;
+}
+
+/* Toggler button (the 3-line "hamburger" icon) — hidden by default
+   while the sidebar is expanded, since there's no need to manually
+   expand a sidebar that's already open. flex-shrink: 0 keeps it from
+   getting squeezed when space is tight. */
+.logo .showcase-toggler {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #610107;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+/* Collapsed state: re-centers the logo row's content (since the logo
+   image itself is hidden, see below, leaving just the toggler) and
+   reduces the horizontal padding to fit the narrower 60px sidebar. */
+.main-wrap .main-head.active .logo {
+    justify-content: center;
+    padding: 15px 10px;
+}
+
+/* Collapsed state: hides the full logo image since there isn't room
+   for it in the narrow 60px sidebar. */
+.main-wrap .main-head.active .logo img {
+    display: none;
+}
+
+/* Collapsed state: shows the toggler button (hidden by default above)
+   so the user has a way to manually re-expand the sidebar, since the
+   logo image that would normally occupy this space is hidden. */
+.main-wrap .main-head.active .logo .showcase-toggler {
+    display: flex;
+}
+
+/* While the sidebar is collapsed AND the mouse is hovering over it
+   (meaning it's in the process of auto-expanding via behavior.js's
+   mouseenter handler), hide the toggler again — it's redundant once
+   hover-expand has taken over, and prevents a flash of the toggler
+   icon during the hover transition. */
+.main-wrap .main-head:hover .logo .showcase-toggler {
+    display: none;
+}
+
+/* Container for the list of nav items below the logo row. flex: 1
+   makes it grow to fill the remaining vertical space in the sidebar
+   (pushing the Logout item, via its own margin-top: auto, to the
+   bottom — see .nav-list-item:last-child below). */
+.main-wrap .main-head .main-nav .navbar .navbar-nav .nav-list {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    margin: 0;
+    padding: 10px;
+    overflow: hidden;
+}
+
+/* Each individual nav link's <li> wrapper: padded, rounded corners,
+   spaced apart vertically, with a pointer cursor and a smooth
+   transition for hover effects. white-space: nowrap keeps the label
+   text from wrapping while the sidebar width is animating. */
+.main-wrap .main-head .main-nav .navbar .navbar-nav .nav-list .nav-list-item {
+    padding: 15px 10px;
+    list-style: none;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    cursor: pointer;
+    transition: 0.2s ease-in-out;
+    white-space: nowrap;
+}
+
+/* The last nav item (Logout) gets margin-top: auto, which — combined
+   with .nav-list's flex: 1 — pushes it all the way down to the
+   bottom of the sidebar, visually separating it from the other links. */
+.main-wrap .main-head .main-nav .navbar .navbar-nav .nav-list .nav-list-item:last-child {
+    margin-top: auto;
+    margin-bottom: 0;
+}
+
+/*
+ * NAV ITEM HOVER + SELECTED (ACTIVE PAGE) STATES
+ * ------------------------------------------------------------------
+ * :hover    — temporary highlight while the mouse is over a nav item.
+ * .selected — persistent highlight for the clicked / current section.
+ *
+ * Dashboard starts selected on load. behavior.js moves .selected to
+ * whichever item the user clicks. Only one item is highlighted at a
+ * time. Uses the same rose/mauve as :hover in both expanded (250px)
+ * and collapsed (60px) sidebar states.
+ */
+.main-wrap .main-head .main-nav .navbar .navbar-nav .nav-list .nav-list-item:hover,
+.main-wrap .main-head .main-nav .navbar .navbar-nav .nav-list .nav-list-item.selected {
+    background-color: var(--nav-highlight-bg);
+    box-shadow: var(--nav-highlight-shadow);
+}
+
+/* The actual clickable link inside each nav item: lays the icon and
+   label out horizontally with a gap between them, styled in the
+   brand's dark red with bold, slightly letter-spaced text.
+   width: 100% ensures the link fills the <li> so the highlight
+   background on the parent covers the full row. */
+.main-wrap .main-head .main-nav .navbar .navbar-nav .nav-list .nav-list-item .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    color: var(--nav-text-color);
+    transition: 0.2s ease-in-out;
+}
+
+/* SELECTED nav item text/icon color override.
+   ------------------------------------------------------------------
+   Only the persistently-selected item (the current page — e.g.
+   "Dashboard" on load) switches its label text and icon to white, so
+   it reads clearly against the rose/mauve --nav-highlight-bg
+   background. Deliberately scoped to ".selected" only, NOT ":hover"
+   — hovering a different, non-selected item still shows the same
+   rose/mauve background (from the rule above) but keeps the dark red
+   text/icon, matching the original hover look. Targets .nav-link as
+   a whole (not just .link-text) so both the icon and the label turn
+   white together, and so this still works correctly in the
+   collapsed/icon-only sidebar state where .link-text is hidden.
+   Applies identically across user.php, techn.php, and admin.php,
+   since all three share this same sidebar markup/CSS. */
+.main-wrap .main-head .main-nav .navbar .navbar-nav .nav-list .nav-list-item.selected .nav-link {
+    color: #fff;
+}
+
+/* Collapsed sidebar: center each nav icon within the narrow 60px rail
+   so the .selected highlight box wraps the icon evenly. */
+.main-wrap .main-head.active .nav-list-item .nav-link {
+    justify-content: center;
+}
+
+/* Collapsed state: hides the text label next to each nav icon,
+   leaving just the icon visible — appropriate for the narrow 60px
+   sidebar width. */
+.main-wrap .main-head.active .nav-link .link-text {
+    display: none;
+}
+
+/* Sizes every nav icon consistently and nudges it down 1px
+   (position: relative; top: 1px) for better optical alignment with
+   the adjacent label text. flex-shrink: 0 keeps icons from shrinking
+   when the sidebar is narrow. */
+.nav-link svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    position: relative;
+    top: 1px;
+}
+
+/*
+ * MAIN CONTENT AREA
+ * ------------------------------------------------------------------
+ * The .showcase section sits next to the sidebar inside .main-wrap's
+ * flex row. flex: 1 makes it expand to fill all remaining horizontal
+ * space regardless of whether the sidebar is expanded or collapsed.
+ */
+.main-wrap .showcase {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Padding around the top/header area of the main content section.
+   flex-shrink: 0 keeps this header row at its natural height on
+   pages where the parent .page-content is a flex column (currently
+   #page-tickets, so its .tickets-list child can grow to fill the
+   rest of the available height). */
+.showcase .head {
+    flex-shrink: 0;
+    padding: 15px;
+}
+
+/*
+ * ====================================================================
+ * SHOWCASE TOP BAR (.head header)
+ * ====================================================================
+ * New addition: a <header> placed inside .showcase .head (the existing
+ * top strip of the main content area, beside the sidebar).
+ *
+ * Purpose: lay out three pieces side by side —
+ *   1. The page title ("Dashboard" h1) on the left.
+ *   2. A search bar placeholder in the middle.
+ *   3. A profile circle placeholder on the right.
+ *
+ * No new logic is introduced here. This only positions these
+ * elements; it does not interact with the sidebar, behavior.js, or
+ * any existing selector above.
+ */
+
+/* Flex row that spans the full width of .head, laying out the h1,
+   search bar, and profile circle left-to-right. justify-content:
+   space-between pushes the h1 to the far left and the profile circle
+   to the far right; the search bar's own flex: 1 (see below) fills
+   the middle space between them. */
+.showcase .head header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+/* Page title text ("Dashboard" / "Tickets" / "Mailbox" / "Settings").
+   Plain styling only — no color/theme decisions beyond a readable
+   default, as requested. Changed from h2 to h1 per request;
+   size/weight tweaked to 34px / 800.
+   line-height: 1 and margin: 0 remove the h1's default extra box
+   height, so its rendered box hugs the text tightly — this is what
+   lets ".showcase .head header"'s align-items: center actually center
+   it flush against the 40px profile circle and the search bar,
+   instead of leaving a slight vertical offset from the heading's
+   built-in line-height.
+   width: 220px + flex-shrink: 0 reserves the SAME horizontal space
+   for the title on every page, regardless of how long the text is
+   ("Dashboard" is much longer than "Tickets"/"Settings"). Without
+   this, the title's natural (text-length-based) width changes how
+   much room is left over for the search bar's flex: 1 sizing,
+   making the search bar render at a different width on each page —
+   this fixes that inconsistency at the source. */
+.showcase .head header h1 {
+    font-size: 34px;
+    font-weight: 800;
+    line-height: 1;
+    margin: 0;
+    width: 220px;
+    flex-shrink: 0;
+}
+
+/*
+ * SEARCH BAR (.head header .search-bar-wrapper)
+ * ------------------------------------------------------------------
+ * Sits between the h1 title and the profile circle inside the same
+ * flex row (.showcase .head header). No search logic is wired up —
+ * this is purely a styled placeholder, matching the same
+ * "shape only, no behavior" approach used for the profile circle.
+ *
+ * Structure: a wrapper div containing the leading search icon (SVG)
+ * and the text <input>, layered with position: relative/absolute so
+ * the icon sits visually inside the input's left side without being
+ * a real child of the <input> (inputs can't contain other elements).
+ *
+ * width: 600px (fixed, not flex: 1) + flex-shrink: 0 makes the search
+ * bar a constant, guaranteed size on every page. It previously used
+ * flex: 1 with a max-width cap, which sized it based on whatever
+ * space was left over after the h1 — since the h1's width changed
+ * with its text length per page, the search bar rendered at a
+ * different width on Dashboard vs Tickets vs Mailbox vs Settings.
+ * A fixed width removes that dependency entirely. margin: 0 24px
+ * gives it breathing room from its two neighbors on either side.
+ *
+ * This single rule is shared by every page header (Dashboard,
+ * Tickets, Mailbox, Settings) since they all reuse the same
+ * ".search-bar-wrapper" class — so the fixed 600px size applies
+ * identically across all four.
+ */
+.showcase .head header .search-bar-wrapper {
+    position: relative;
+    width: 600px;
+    flex-shrink: 0;
+    margin: 0 24px;
+    display: flex;
+    align-items: center;
+}
+
+/* The search icon (SVG), absolutely positioned inside the wrapper so
+   it overlaps the input's left padding rather than taking up its own
+   space in the flex row. transform centers it vertically regardless
+   of the wrapper's height. pointer-events: none lets clicks pass
+   through to the input underneath, so the icon never blocks focusing
+   or typing into the search bar. */
+.showcase .head header .search-bar-wrapper .search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    color: #9c9c9c;
+    pointer-events: none;
+}
+
+/* The actual text input. width: 100% fills the wrapper (which is
+   already sized via flex/max-width above). padding-left is widened
+   to 40px to make room for the icon sitting on top of it, so typed
+   text never overlaps the icon. */
+.showcase .head header .search-bar {
+    width: 100%;
+    height: 40px;
+    padding: 0 16px 0 40px;
+    border: 1px solid #d9d9d9;
+    border-radius: 20px;
+    outline: none;
+    font-size: 14px;
+    background-color: #f5f5f5;
+}
+
+/* Placeholder text color inside the search bar — kept muted/gray so
+   it reads as a hint rather than real input. */
+.showcase .head header .search-bar::placeholder {
+    color: #9c9c9c;
+}
+
+/*
+ * Profile circle placeholder.
+ * ------------------------------------------------------------------
+ * Plain circle shape only — no avatar image, initials, dropdown, or
+ * click behavior is wired up. Intended as a visual placeholder for a
+ * future profile feature to be built on top of later.
+ */
+.showcase .head header .profile-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #d9d9d9;
+    flex-shrink: 0;
+}
+
+/*
+ * ====================================================================
+ * SIDEBAR-DRIVEN PAGE CONTENT SWITCHING
+ * ====================================================================
+ * Lets each sidebar nav item show its own block of content below the
+ * .head header, without a page reload and without any new
+ * JavaScript.
+ *
+ * How it works:
+ * - behavior.js's existing setSelectedNavItem() function (unchanged)
+ *   already copies the clicked nav item's data-nav value onto
+ *   <body data-page="...">. That wiring already existed before this
+ *   feature — these rules simply read that attribute.
+ * - Each content block below the header is wrapped in a
+ *   ".page-content" div with an id matching a data-nav value
+ *   (#page-dashboard, #page-tickets, #page-utilities, etc).
+ * - By default every ".page-content" block is hidden. The single
+ *   block whose id matches the current body[data-page] value is
+ *   revealed. Only one is ever visible at a time, since body can only
+ *   have one data-page value.
+ *
+ * Scope: these selectors target ".page-content" elements generically,
+ * so they apply uniformly across user.php, techn.php, and admin.php,
+ * since all three now use this markup pattern.
+ *
+ * utilities / analytics added so admin.php's Utilities and Analytics
+ * sidebar items actually swap the visible content block (and its h1)
+ * — previously admin.php had no #page-utilities / #page-analytics
+ * blocks at all, so clicking those items moved the sidebar highlight
+ * but the h1 stayed frozen on "Dashboard".
+ */
+.showcase .page-content {
+    display: none;
+}
+
+body[data-page="dashboard"] .showcase #page-dashboard,
+body[data-page="utilities"] .showcase #page-utilities,
+body[data-page="analytics"] .showcase #page-analytics,
+body[data-page="mailbox"] .showcase #page-mailbox,
+body[data-page="messages"] .showcase #page-messages,
+body[data-page="settings"] .showcase #page-settings {
+    display: block;
+}
+
+/* Tickets page specifically needs flex: 1 (to grow and fill the
+   full height of its parent .showcase) plus flex-direction: column
+   (so its own children, like .tickets-list, stack vertically and can
+   in turn grow to fill the space this element just claimed) — see
+   "TICKETS LIST" rules further below. */
+body[data-page="tickets"] .showcase #page-tickets {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    flex-direction: column;
+}
+
+/*
+ * ====================================================================
+ * DASHBOARD STATUS CARDS (techn.php, inside #page-dashboard)
+ * ====================================================================
+ * Four small summary cards — Ongoing, Processing, Resolved, Pending —
+ * shown directly under the .head header. Each card currently displays
+ * a static placeholder count ("0"); wiring these up to real ticket
+ * counts is left for later, this is just the visual shell.
+ */
+
+/* Row container: lays the 4 cards out horizontally with even spacing
+   and lets them wrap onto a new line on narrow viewports instead of
+   overflowing. */
+.status-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    padding: 0 15px 15px;
+}
+
+/* Each individual card: white box, rounded corners, light shadow to
+   match the existing sidebar's visual language. flex: 1 makes all 4
+   cards share the row equally; min-width keeps them from squishing
+   too narrow before wrapping. */
+.status-card {
+    flex: 1;
+    /* Bumped from 180px to 200px to comfortably fit the larger icon
+       badge and text before the cards wrap onto a new line. */
+    min-width: 200px;
+    background-color: #fff;
+    border-radius: 10px;
+    /* Stronger, more spread-out shadow than the original
+       (0 4px 10px @ 8% opacity) so the card's rounded-rectangle shape
+       actually reads against the page background, instead of nearly
+       disappearing into it. Larger blur/spread + slightly higher
+       opacity, while staying soft/diffuse rather than harsh. */
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Left side of the card: stacks the placeholder count ("0") above its
+   label ("Ongoing", "Processing", etc.). */
+.status-card .status-card-info {
+    display: flex;
+    flex-direction: column;
+}
+
+/* The placeholder count above each label. Static "0" for all 4 cards
+   for now — not wired to any real data yet. Scaled down slightly
+   from 24px to 20px. */
+.status-card .status-card-count {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+/* The label under the count ("Ongoing", "Processing", "Resolved",
+   "Pending"). Muted gray, like other secondary text elsewhere in the
+   dashboard (e.g. nav-link labels). Scaled down slightly from 16px
+   to 14px. */
+.status-card .status-card-label {
+    font-size: 14px;
+    color: #787777;
+}
+
+/*
+ * Card icon circle.
+ * ------------------------------------------------------------------
+ * Each card's icon sits inside a colored circular badge on the right.
+ * --status-color is set per-card via inline style (one color per
+ * category, matching the hex codes provided: Ongoing #00ABB1,
+ * Processing #FF8D28, Resolved #34C759, Pending #000000) so this one
+ * rule serves all 4 cards without repeating per-color CSS.
+ *
+ * All four cards now use the "filled" modifier class: a solid badge
+ * background in the card's status color, with a white icon on top.
+ * Ongoing and Processing originally used the "outline" style (colored
+ * icon on a neutral badge, matching the original reference design),
+ * but were switched to "filled" per request to invert their look —
+ * now matching Resolved/Pending's solid-badge treatment.
+ */
+.status-card .status-card-icon {
+    /* Scaled down slightly from 52px to 44px per request. */
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Outline style: neutral badge, icon rendered in its own status
+   color via currentColor. Background darkened from the original
+   #f0f0f0 to #e4e4e4 — bright/pale status colors had too little
+   contrast against the lighter gray and looked washed-out/gray
+   instead of colored; this darker neutral keeps any status color
+   clearly visible without changing the colors
+   themselves. Not currently used by any card (Ongoing and Processing
+   were switched to "filled" below, to invert their badge colors per
+   request) — kept available for future cards/reuse. */
+.status-card .status-card-icon.outline {
+    background-color: #e4e4e4;
+    color: var(--status-color, #610107);
+}
+
+/* Filled style (Ongoing, Processing, Resolved, Pending): badge
+   background is the status color itself, with a white icon on top
+   for contrast. Ongoing and Processing were switched from "outline"
+   to "filled" per request — this inverts their look from "colored
+   icon on neutral badge" to "colored badge with white icon",
+   matching what Resolved/Pending already looked like. */
+.status-card .status-card-icon.filled {
+    background-color: var(--status-color, #610107);
+    color: #fff;
+}
+
+/* Icon SVGs inside each badge, sized consistently. Scaled down
+   slightly from 28px to 22px to match the smaller 44px badge. */
+.status-card .status-card-icon svg {
+    width: 22px;
+    height: 22px;
+}
+
+/*
+ * ====================================================================
+ * COMPACT STATUS CARDS (user.php, inside #page-tickets)
+ * ====================================================================
+ * A left-aligned variant of the .status-cards row above, used for the
+ * 3-card (Ongoing/Processing/Resolved) summary on the regular user
+ * dashboard's Tickets page.
+ *
+ * Differences from the techn.php ".status-cards" row:
+ * - flex: 0 0 auto on each card (via .status-card.compact) instead of
+ *   flex: 1, so cards size to their own content instead of stretching
+ *   to fill the row — this is what "compresses" them to the left.
+ * - justify-content: flex-start on the row (vs. the default stretch/
+ *   spread behavior) keeps the cards bunched together rather than
+ *   spread evenly across the available width.
+ * - Sizing (padding/icon/fonts) is larger than a tight summary chip,
+ *   while staying a bit smaller than the techn.php dashboard cards.
+ */
+
+/* Row container: left-aligned, content-sized cards. Does not wrap by
+   default since 3 compact cards comfortably fit most viewport
+   widths; wraps only if truly necessary on very narrow screens.
+   flex-shrink: 0 keeps this row from being squeezed once #page-tickets
+   becomes a flex column and .tickets-list starts claiming the
+   remaining vertical space below. */
+.status-cards-compact {
+    display: flex;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 15px;
+}
+
+/* Compact card: no flex-grow (sizes to content), so the cards sit
+   snugly together on the left rather than spanning the full row.
+   Padding/gap sized up so the card reads bigger overall. */
+.status-card.compact {
+    flex: 0 0 auto;
+    min-width: 0;
+    padding: 14px 22px;
+    gap: 18px;
+}
+
+/* Placeholder count text for the compact variant — enlarged. */
+.status-card.compact .status-card-count {
+    font-size: 20px;
+}
+
+/* Label text for the compact variant — enlarged. */
+.status-card.compact .status-card-label {
+    font-size: 14px;
+}
+
+/* Icon badge for the compact variant — enlarged from 32px to 40px. */
+.status-card .status-card-icon.compact {
+    width: 40px;
+    height: 40px;
+}
+
+/* Icon glyph inside the compact badge — enlarged from 16px to 20px
+   to match the bigger 40px badge. */
+.status-card .status-card-icon.compact svg {
+    width: 20px;
+    height: 20px;
+}
+
+/*
+ * ====================================================================
+ * TICKETS TOOLBAR (user.php, inside #page-tickets)
+ * ====================================================================
+ * Row that holds the status cards on the left and the "New Ticket"
+ * action button on the right (opposite ends).
+ *
+ * margin-top: 40px pushes this whole row down, away from the
+ * .head header / navbar above it. flex-shrink: 0 keeps this toolbar
+ * at its natural height (rather than getting compressed) now that
+ * #page-tickets is a flex column and .tickets-list below it grows to
+ * fill the rest of the available height.
+ */
+.tickets-toolbar {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    margin-top: 40px;
+    padding: 0 15px 15px;
+}
+
+/*
+ * "New Ticket" button.
+ * ------------------------------------------------------------------
+ * Solid brand-red background (#610107) with white text/icon, pill-
+ * style rounded corners. Icon + label laid out in a row via flex.
+ */
+.btn-new-ticket {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #610107;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 22px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: 0.2s ease-in-out;
+}
+
+/* Hover state — copies the sidebar's exact .nav-list-item:hover
+   token (--nav-highlight-bg / --nav-highlight-shadow, defined in the
+   :root block near the top of this file) so the button lightens to
+   the same rose/mauve used when hovering a sidebar nav item, while
+   its base color stays the dark maroon (#610107). */
+.btn-new-ticket:hover {
+    background-color: var(--nav-highlight-bg);
+    box-shadow: var(--nav-highlight-shadow);
+    color: var(--nav-text-color);
+}
+
+/* Plus icon inside the New Ticket button, sized to sit comfortably
+   next to the label text. */
+.btn-new-ticket svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+/*
+ * ====================================================================
+ * TICKETS LIST (user.php, inside #page-tickets)
+ * ====================================================================
+ * Container below the toolbar that will eventually list the user's
+ * submitted tickets, grouped into 4 columns: ID, Subject,
+ * Description, Status (matching the reference header image).
+ *
+ * No real data/logic is wired up yet, so the body currently shows a
+ * single "No tickets submitted yet." placeholder row.
+ *
+ * HEIGHT: flex: 1 makes this container grow to fill all remaining
+ * vertical space inside #page-tickets. This only works because
+ * #page-tickets ITSELF also has flex: 1 (see the
+ * body[data-page="tickets"] rule above) — display:flex on an element
+ * only controls how its own children are laid out, it does not make
+ * the element grow inside ITS parent; that growth has to be granted
+ * explicitly at every level of the chain (.showcase → #page-tickets →
+ * .tickets-list → .tickets-list-body), or the chain breaks at
+ * whichever level is missing it. min-height: 0 is also set on the
+ * growing elements because flex items default to a content-based
+ * min-height, which can otherwise cap flex:1 at the content's own
+ * size instead of the full available space.
+ *
+ * Structure:
+ *   .tickets-list                 — outer #D3D3D3 container, rounded
+ *     .tickets-list-header        — the 4-column header row
+ *       .tickets-col-id / -subject / -description / -status
+ *     .tickets-list-body          — holds ticket rows (or the empty
+ *                                    state, for now); also flex: 1 so
+ *                                    it (not just the outer
+ *                                    container) expands to fill the
+ *                                    remaining height
+ */
+
+/* Outer container: white background with a soft shadow so it reads as
+   its own panel (matches .mailbox-container's card treatment). Rounded
+   corners, margin to sit comfortably below the toolbar above it and
+   inset from the showcase's edges. flex: 1 + flex-direction: column
+   lets the header stay its natural height while .tickets-list-body
+   (flex: 1 below) stretches to fill the rest. */
+.tickets-list {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    background-color: #fff;
+    border-radius: 10px;
+    margin: 0 15px 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.10);
+}
+
+/* Header row: lays the 4 column labels out evenly across the
+   container's width, matching the proportions of the reference
+   image (ID narrow, Subject/Description wider, Status narrow).
+   Bottom border visually separates the header from the ticket rows
+   below it. flex-shrink: 0 keeps the header at its natural height
+   even as the body below it grows. */
+.tickets-list-header {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    padding: 16px 24px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+/* Shared base styling for every column label in the header: gray,
+   bold, slightly letter-spaced for a clean "table header" look. */
+.tickets-list-header span {
+    color: #818181;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.3px;
+}
+
+/* Column width proportions, matching the reference image: ID is
+   narrowest, Subject and Description share most of the width, Status
+   is narrow again on the far right. */
+.tickets-col-id {
+    flex: 0 0 10%;
+}
+
+.tickets-col-subject {
+    flex: 1 1 30%;
+}
+
+.tickets-col-description {
+    flex: 1 1 40%;
+}
+
+.tickets-col-status {
+    flex: 0 0 15%;
+    text-align: right;
+}
+
+/* Body area below the header: holds individual ticket rows once real
+   data exists. flex: 1 (plus min-height: 0, for the same reason as
+   .tickets-list above) makes it grow to fill the remaining height of
+   .tickets-list, so the gray background fills all the way down
+   instead of hugging just the empty-state text. */
+.tickets-list-body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Empty-state message shown while no tickets have been submitted.
+   Icon + text stacked in a centered column, both horizontally and
+   vertically, within the now-tall .tickets-list-body. */
+.tickets-empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    text-align: center;
+    color: #5a5a5a;
+    font-size: 14px;
+}
+.tickets-empty-state svg {
+    width: 48px;
+    height: 48px;
+    color: #c8c8c8;
+}
+.tickets-empty-state p {
+    margin: 0;
+    font-size: 14px;
+    color: #5a5a5a;
+}
+/* ====================================================================
+ * PAGE SWITCHER — MESSAGES (flex, fills height like tickets)
+ * ==================================================================== */
+body[data-page="messages"] .showcase #page-messages {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    flex-direction: column;
+}
+
+/* ====================================================================
+ * ADMIN / SHARED TICKET TABLE COLUMNS (.tcol-*)
+ * ==================================================================== */
+.tcol-id         { flex: 0 0 8%; }
+.tcol-subject    { flex: 1 1 22%; }
+.tcol-category   { flex: 0 0 13%; }
+.tcol-priority   { flex: 0 0 11%; }
+.tcol-status     { flex: 0 0 12%; }
+.tcol-assigned   { flex: 0 0 18%; }
+.tcol-action     { flex: 0 0 16%; display: flex; justify-content: flex-end; }
+
+/* ====================================================================
+ * TECHNICIAN TICKET TABLE COLUMNS (.ttcol-*)
+ * ==================================================================== */
+.ttcol-id       { flex: 0 0 8%; }
+.ttcol-subject  { flex: 1 1 0; }
+.ttcol-category { flex: 0 0 14%; }
+.ttcol-priority { flex: 0 0 12%; }
+.ttcol-status   { flex: 0 0 14%; }
+.ttcol-action   { flex: 0 0 18%; display: flex; justify-content: flex-end; }
+
+/* ====================================================================
+ * TICKET FILTER TABS
+ * ==================================================================== */
+.tickets-filter-tabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.filter-tab {
+    background-color: #fff;
+    border: 1px solid #d9d9d9;
+    border-radius: 20px;
+    padding: 6px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #5a5a5a;
+    cursor: pointer;
+    transition: 0.2s ease-in-out;
+    font-family: "Inter";
+}
+.filter-tab:hover {
+    background-color: var(--nav-highlight-bg);
+    border-color: var(--nav-highlight-bg);
+    color: var(--nav-text-color);
+}
+.filter-tab.active-tab {
+    background-color: #610107;
+    border-color: #610107;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* ====================================================================
+ * TOOLBAR — alignment fix (user.php)
+ * ==================================================================== */
+.tickets-toolbar .btn-new-ticket {
+    padding-top: 6px;
+    padding-bottom: 6px;
+    font-size: 13px;
+}
+
+/* ====================================================================
+ * STATUS BADGE
+ * ==================================================================== */
+.status-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+}
+.status-badge.ongoing    { background-color: #00ABB1; }
+.status-badge.processing { background-color: #FF8D28; }
+.status-badge.resolved   { background-color: #34C759; }
+.status-badge.pending    { background-color: #818181; }
+
+/* ====================================================================
+ * PRIORITY BADGE
+ * ==================================================================== */
+.priority-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+}
+.priority-badge.critical { background-color: #FF3B30; }
+.priority-badge.high     { background-color: #FF8D28; }
+.priority-badge.medium   { background-color: #FFCC00; color: #1a1a1a; }
+.priority-badge.low      { background-color: #34C759; }
+
+/* ====================================================================
+ * ASSIGN BUTTON (admin — filled)
+ * ==================================================================== */
+.btn-assign {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background-color: #610107;
+    color: #f5f5f5;
+    border: none;
+    border-radius: 6px;
+    padding: 5px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: "Inter";
+    transition: 0.2s ease-in-out;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    white-space: nowrap;
+}
+.btn-assign:hover {
+    background-color: var(--nav-highlight-bg);
+    color: var(--nav-text-color);
+    box-shadow: var(--nav-highlight-shadow);
+}
+
+/* ====================================================================
+ * UPDATE STATUS BUTTON (technician — outlined)
+ * ==================================================================== */
+.btn-update-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background-color: transparent;
+    color: #610107;
+    border: 1.5px solid #610107;
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: "Inter";
+    transition: 0.2s ease-in-out;
+    white-space: nowrap;
+}
+.btn-update-status:hover {
+    background-color: #610107;
+    color: #f5f5f5;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* ====================================================================
+ * TICKET ROW
+ * ==================================================================== */
+.ticket-row {
+    display: flex;
+    align-items: center;
+    padding: 14px 24px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    transition: background-color 0.15s ease;
+    background-color: transparent;
+}
+.ticket-row:last-child { border-bottom: none; }
+.ticket-row:hover      { background-color: rgba(0, 0, 0, 0.02); }
+.ticket-row span       { font-size: 13px; color: #1a1a1a; }
+
+/* ====================================================================
+ * COLOR PALETTE UNIFICATION
+ * ====================================================================
+ * Tickets list header + row hover tuned to sit on the white
+ * .tickets-list background (merged directly into the base rule above).
+ */
+
+/* Subtle gray header bar — distinguishes it from the white body */
+.tickets-list-header {
+    background-color: #f5f5f5;
+}
+
+/* Slightly darker hover on white rows (was rgba(255,255,255,0.55)
+   which doesn't show against a white bg) */
+.ticket-row:hover {
+    background-color: #f8f8f8;
+}
+
+/* Mailbox container — same shadow token as tickets-list */
+.mailbox-container {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.10);
+}
+
+/* ====================================================================
+ * USER MAILBOX — TWO-PANEL LAYOUT
+ * ==================================================================== */
+.mailbox-container {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    margin: 0 15px 15px;
+    border-radius: 10px;
+    overflow: hidden;
+}
+.mailbox-threads {
+    width: 300px;
+    flex-shrink: 0;
+    background-color: #fff;
+    border-right: 1px solid #e8e8e8;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.mailbox-threads-header {
+    display: flex;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e8e8e8;
+    flex-shrink: 0;
+}
+.mailbox-threads-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a1a1a;
+    letter-spacing: 0.3px;
+}
+.mailbox-threads-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+.mailbox-threads-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 24px 20px;
+    text-align: center;
+}
+.mailbox-threads-empty p {
+    font-size: 13px;
+    color: #9c9c9c;
+    margin: 0;
+    line-height: 1.5;
+}
+.mailbox-threads-empty p:first-child {
+    font-size: 13px;
+    font-weight: 600;
+    color: #5a5a5a;
+}
+.mailbox-thread-item {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 14px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    border-left: 3px solid transparent;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+.mailbox-thread-item:last-child   { border-bottom: none; }
+.mailbox-thread-item:hover        { background-color: #f8f8f8; }
+.mailbox-thread-item.active {
+    background-color: #fdf0f0;
+    border-left-color: #610107;
+}
+.mailbox-thread-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.mailbox-thread-subject {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a1a1a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+}
+.mailbox-thread-time {
+    font-size: 11px;
+    color: #9c9c9c;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+.mailbox-thread-preview {
+    font-size: 12px;
+    color: #787777;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mailbox-unread-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #610107;
+    flex-shrink: 0;
+}
+.mailbox-chat {
+    flex: 1;
+    min-width: 0;
+    background-color: #f5f5f5;
+    display: flex;
+    flex-direction: column;
+}
+.mailbox-chat-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    text-align: center;
+    padding: 24px;
+}
+.mailbox-chat-empty svg {
+    width: 52px;
+    height: 52px;
+    color: #d0d0d0;
+}
+.mailbox-chat-empty-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #5a5a5a;
+    margin: 0;
+}
+.mailbox-chat-empty-sub {
+    font-size: 13px;
+    color: #9c9c9c;
+    margin: 0;
+    max-width: 240px;
+    line-height: 1.5;
+}
+.mailbox-chat-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 20px;
+    background-color: #fff;
+    border-bottom: 1px solid #e8e8e8;
+    flex-shrink: 0;
+}
+.mailbox-chat-header-subject {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a1a1a;
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mailbox-chat-messages {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.mailbox-msg {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-width: 70%;
+}
+.mailbox-msg.sent      { align-self: flex-end;   align-items: flex-end; }
+.mailbox-msg.received  { align-self: flex-start;  align-items: flex-start; }
+.mailbox-msg-bubble {
+    padding: 10px 14px;
+    border-radius: 14px;
+    font-size: 13px;
+    line-height: 1.5;
+    word-break: break-word;
+}
+.mailbox-msg.sent .mailbox-msg-bubble {
+    background-color: #610107;
+    color: #fff;
+    border-bottom-right-radius: 4px;
+}
+.mailbox-msg.received .mailbox-msg-bubble {
+    background-color: #fff;
+    color: #1a1a1a;
+    border-bottom-left-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+.mailbox-msg-time { font-size: 11px; color: #9c9c9c; }
+.mailbox-chat-input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 20px;
+    background-color: #fff;
+    border-top: 1px solid #e8e8e8;
+    flex-shrink: 0;
+}
+.mailbox-chat-input {
+    flex: 1;
+    height: 40px;
+    padding: 0 14px;
+    border: 1px solid #d9d9d9;
+    border-radius: 20px;
+    outline: none;
+    font-size: 13px;
+    font-family: "Inter";
+    background-color: #f5f5f5;
+    color: #1a1a1a;
+    transition: border-color 0.15s ease;
+}
+.mailbox-chat-input:focus {
+    border-color: #610107;
+    background-color: #fff;
+}
+.mailbox-chat-input::placeholder { color: #9c9c9c; }
+.mailbox-chat-send {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background-color: #610107;
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: 0.2s ease-in-out;
+}
+.mailbox-chat-send:hover {
+    background-color: var(--nav-highlight-bg);
+    color: var(--nav-text-color);
+}
+.mailbox-chat-send svg { width: 18px; height: 18px; }

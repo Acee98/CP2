@@ -1,0 +1,231 @@
+/* Imports the "Inter" font family, matching every other stylesheet
+   in this project (main_interface.css, login_signup.css,
+   landing_page.css). */
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
+/* Universal reset: removes default margin/padding, normalizes the
+   box model, and sets Inter as the base font for every element —
+   same pattern used across the rest of the project. */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Inter";
+}
+
+/* Light gray page background (matches the #ebebeb/#f5f5f5 neutral
+   tones used elsewhere) so the white cards stand out, and centers
+   the ticket form on the page. */
+html,
+body {
+    height: 100%;
+}
+
+body {
+    background-color: #ebebeb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 20px;
+}
+
+/*
+ * TICKET CONTAINER
+ * ------------------------------------------------------------------
+ * Outer wrapper that stacks the header card and form card vertically,
+ * matching the two-card layout from the Figma reference. Fixed max
+ * width keeps the form a comfortable reading width on large screens
+ * while still shrinking on smaller ones.
+ */
+.ticket-container {
+    width: 100%;
+    max-width: 560px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/*
+ * HEADER CARD
+ * ------------------------------------------------------------------
+ * White rounded card holding just the "Submit New Ticket" title,
+ * matching the top card in the Figma design. Shadow/radius language
+ * matches .main-head / .status-card elsewhere in the project.
+ */
+.ticket-header {
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+    padding: 16px 20px;
+}
+
+.ticket-header h1 {
+    font-size: 22px;
+    font-weight: 800;
+    color: #1a1a1a;
+}
+
+/*
+ * FORM CARD
+ * ------------------------------------------------------------------
+ * Second white rounded card holding the intro sentence and the 3
+ * requested fields (category dropdown, subject input, description
+ * textarea), plus the submit button.
+ */
+.ticket-form {
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Intro helper line ("Please provide the details..."), muted gray
+   to match the helper-text styling used in login_signup.css (p, h5). */
+.ticket-intro {
+    color: #787777;
+    font-size: 14px;
+}
+
+/*
+ * FIELD WRAPPER
+ * ------------------------------------------------------------------
+ * Each of the 3 sections (Category / Subject / Description) shares
+ * this wrapper: a light gray panel containing a bold label and its
+ * input control, matching the boxed "Subject:" / "Description:"
+ * sections shown in the Figma reference.
+ */
+.ticket-field {
+    background-color: #f0f0f0;
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ticket-field label {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+/* Shared styling for the dropdown, text input, and textarea so all
+   3 controls look consistent: white background, subtle border,
+   rounded corners — matching the input styling already established
+   in login_signup.css. */
+.ticket-field select,
+.ticket-field input[type="text"],
+.ticket-field textarea {
+    width: 100%;
+    background-color: #fff;
+    border: 1px solid #d9d9d9;
+    border-radius: 6px;
+    padding: 9px 12px;
+    font-size: 14px;
+    font-family: "Inter";
+    color: #1a1a1a;
+    outline: none;
+}
+
+/* Textarea-specific: prevent horizontal resize (vertical-only) and
+   keep the height close to what's actually needed for a couple of
+   lines of text, instead of forcing a tall box by default. Still
+   user-resizable via the drag handle if more room is needed. */
+.ticket-field textarea {
+    resize: vertical;
+    min-height: 70px;
+    line-height: 1.5;
+}
+
+/* Placeholder text color — muted gray, matching the search bar and
+   login form placeholder styling elsewhere in the project. */
+.ticket-field input::placeholder,
+.ticket-field textarea::placeholder {
+    color: #9c9c9c;
+}
+
+/* Focus state: swaps the neutral border for the brand red so it's
+   clear which field is active, without needing any JavaScript. */
+.ticket-field select:focus,
+.ticket-field input[type="text"]:focus,
+.ticket-field textarea:focus {
+    border-color: #7e030b;
+    box-shadow: 0 0 0 3px rgba(126, 3, 11, 0.12);
+}
+
+/* Category dropdown: pointer cursor since it's a clickable control. */
+.ticket-field select {
+    cursor: pointer;
+}
+
+/*
+ * ACTION BUTTON ROW
+ * ------------------------------------------------------------------
+ * Holds Cancel (secondary, left) and Submit (primary, right) side by
+ * side, matching the Figma layout's single-row footer.
+ */
+.ticket-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 4px;
+}
+
+/* Submit: solid dark maroon base, matching .btn-new-ticket's base
+   color (#610107, main_interface.css) for visual consistency across
+   the whole app. Hover copies the sidebar's exact
+   --nav-highlight-bg / --nav-highlight-shadow values (#bd8084 /
+   0 4px 12px rgba(0,0,0,0.25)) — same rose/mauve lift used when
+   hovering a sidebar nav item — plus a matching text/icon color
+   switch to dark maroon (--nav-text-color: #610107) so the label
+   stays readable against the lighter hover background. */
+.btn-submit-ticket {
+    background-color: #610107;
+    color: #f5f5f5;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 26px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transition: 0.2s ease-in-out;
+}
+
+.btn-submit-ticket:hover {
+    background-color: #bd8084;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    color: #610107;
+}
+
+/* Cancel: secondary/outline style so it doesn't compete visually
+   with Submit, but is still clearly a button (matches the neutral
+   border tone used on the form inputs above). Rendered as an <a>
+   tag in the markup (navigates back), so text-align/display are set
+   to make it look and size like the button next to it. */
+.btn-cancel-ticket {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #fff;
+    color: #5a5a5a;
+    border: 1px solid #d9d9d9;
+    border-radius: 8px;
+    padding: 10px 26px;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    transition: 0.2s ease-in-out;
+}
+
+.btn-cancel-ticket:visited {
+    color: #5a5a5a;
+}
+
+.btn-cancel-ticket:hover {
+    background-color: #f0f0f0;
+}

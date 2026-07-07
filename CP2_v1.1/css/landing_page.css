@@ -1,0 +1,159 @@
+/*Adding Font*/
+/* Imports the "Inter" font family from Google Fonts so it can be used
+   throughout this stylesheet via font-family: "Inter". */
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
+/* Universal reset: removes default box-model quirks and underlines
+   from all elements/links so spacing and link styling stays
+   predictable and is fully controlled by the rules below. */
+* {
+    box-sizing: border-box;
+    text-decoration: none;
+}
+
+/* Ensures html/body take up the full viewport height with no default
+   browser margin/padding, and sets a base font size (12pt) that other
+   rem/em-based sizing in the page can build on. */
+html,
+body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-size: 12pt;
+}
+
+/* Sets the page's hero/background image to cover the entire viewport,
+   centered, without tiling. */
+body {
+    background-image: url("../images/Hero\ Section.png");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* Top navigation bar container: near-black translucent background,
+   full width, using the Inter font. */
+.navbar {
+    background-color: rgba(11, 12, 22, 0.99);
+    font-family: "Inter";
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+/* Flex row layout for the navbar's inner content, spacing the logo
+   and the login button to opposite ends with a gap between items. */
+.navdiv {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+/* Removes default list styling/spacing from the <ul> inside the nav
+   and lays its items out in a horizontal flex row. */
+.navdiv ul {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    list-style: none;
+}
+
+/* Logo wrapper: fixed width with padding and a left margin to push it
+   away from the edge of the navbar. */
+.logo {
+    width: 80px;
+    padding: 15px;
+    margin-left: 30px;
+}
+
+/* Logo image scales to fill its 80px-wide container while keeping its
+   natural aspect ratio (height: auto). */
+.logo img {
+    width: 80px;
+    height: auto;
+}
+
+/* "Login" button styling: light/white pill-style button with rounded
+   corners, spaced away from the right edge of the navbar. */
+.btnW {
+    background-color: #f5f5f5;
+    border: none;
+    border-radius: 4px;
+    margin-right: 30px;
+    padding: 4px 20px;
+}
+
+/* The text/link inside the login button: dark red, bold, slightly
+   larger font so it reads clearly against the light button background. */
+.btnW a {
+    color: #610107;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+/* Main hero heading ("Welcome to ZPGC Services!"): large, centered,
+   light-colored text using the Inter font. */
+#header {
+    font-family: "Inter";
+    color: #f5f5f5;
+    text-align: center;
+    margin: 0;
+    font-size: 55px;
+}
+
+/* Hero subheading text: smaller, centered, constrained to a max width
+   so long sentences wrap nicely instead of stretching edge-to-edge. */
+#subhead {
+    font-family: "Inter";
+    color: #f5f5f5;
+    text-align: center;
+    max-width: 700px;
+    margin: 0;
+    font-weight: 380;
+    font-size: 18px;
+}
+
+/* "Signup now!" call-to-action button: dark red background, rounded
+   corners, bold padding to make it stand out as the primary action. */
+.btnR {
+    display: block;
+    margin-top: 4px;
+    background-color: #7e030b;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 24px;
+    font-weight: bold;
+}
+
+/* Link text inside the signup button: light-colored, no underline,
+   sized to fit comfortably within the button's padding. */
+.btnR a {
+    text-decoration: none;
+    padding: 4px 20px;
+    font-size: 15px;
+    color: #f5f5f5;
+}
+
+/* Keeps the signup button link the same light color even after the
+   user has visited it (overrides the browser's default purple
+   "visited link" color). */
+.btnR a:visited {
+    text-decoration: none;
+    padding: 4px 20px;
+    font-size: 15px;
+    color: #f5f5f5;
+}
+
+/* Hero section container: fills the remaining viewport height below
+   the navbar (50px) and centers its content (heading, subheading,
+   button) both vertically and horizontally. */
+.hero {
+    min-height: calc(100vh - 50px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
