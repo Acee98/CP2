@@ -28,7 +28,7 @@ Steup-by-step setup:
 
 <img width="1363" height="642" alt="image" src="https://github.com/user-attachments/assets/fd121382-545e-4e01-a7e6-690ba967da6b" />
 
-- Paste this SQL statement in SQL section in MyPHPAdmin
+- Paste this SQL statement in SQL section in MyPHPAdmin, then click "Go"
 <img width="1360" height="653" alt="image" src="https://github.com/user-attachments/assets/d272b9f0-b187-42c1-baaf-468e6ca73b4c" />
 
 
