@@ -2,7 +2,10 @@
 
 // Start the session so we can read any error messages / active-form
 // state that user_mngmnt.php may have stored before redirecting here.
-session_start();
+// FIX: session setup now centralized in session_config.php — see
+// that file for why (dedicated session storage folder + consistent
+// cookie config across every session-using page).
+require_once '../logic/session_config.php';
 
 /**
  * Build an $errors array holding any login/signup error messages that
@@ -26,10 +29,22 @@ $errors = [
  */
 $activeForm = $_SESSION['active_form'] ?? ($_GET['form'] ?? 'login');
 
-// Clear all session data now that we've read what we need from it.
-// This prevents the same error message from reappearing on a future
-// page load/refresh.
-session_unset();
+// FIX: this used to be session_unset(), which clears the ENTIRE
+// session — not just the few keys this page actually reads. Since
+// browser tabs share one session (same cookie), that meant loading
+// this page in ANY tab (e.g. a Signup tab open alongside an Admin
+// dashboard tab in another tab of the same browser) wiped out
+// $_SESSION['email'] / ['role'] for every other tab too — making an
+// already-logged-in admin look logged out the moment they switched
+// back, even though nothing about their own session actually expired.
+// Only clearing the specific keys this page owns leaves any unrelated
+// session data (like another tab's logged-in identity) untouched.
+unset(
+    $_SESSION['login_error'],
+    $_SESSION['signup_error'],
+    $_SESSION['signup_success'],
+    $_SESSION['active_form']
+);
 
 /**
  * showError()

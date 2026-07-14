@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../css/main_interface.css?v=1.4">
+    <link rel="stylesheet" href="../css/main_interface.css?v=1.9">
     <title>ZPGC Services | Technician</title>
 </head>
 
@@ -361,7 +361,7 @@
         </section>
     </main>
 
-    <script src="../js/behavior.js?v=1.4"></script>
+    <script src="../js/behavior.js?v=1.9"></script>
 </body>
 
 </html>

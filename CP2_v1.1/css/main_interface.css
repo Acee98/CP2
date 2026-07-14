@@ -486,11 +486,11 @@ a {
 }
 
 /*
- * Profile circle placeholder.
+ * Profile circle.
  * ------------------------------------------------------------------
- * Plain circle shape only — no avatar image, initials, dropdown, or
- * click behavior is wired up. Intended as a visual placeholder for a
- * future profile feature to be built on top of later.
+ * Shows the logged-in user's initials (computed server-side from
+ * $_SESSION first_name/last_name in user.php — no avatar image is
+ * stored anywhere in the users table, so initials stand in for one).
  */
 .showcase .head header .profile-circle {
     width: 40px;
@@ -498,6 +498,12 @@ a {
     border-radius: 50%;
     background-color: #d9d9d9;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: #5a5a5a;
 }
 
 /*
@@ -538,8 +544,8 @@ a {
 body[data-page="dashboard"] .showcase #page-dashboard,
 body[data-page="utilities"] .showcase #page-utilities,
 body[data-page="analytics"] .showcase #page-analytics,
-body[data-page="mailbox"] .showcase #page-mailbox,
 body[data-page="messages"] .showcase #page-messages,
+body[data-page="profile"] .showcase #page-profile,
 body[data-page="settings"] .showcase #page-settings {
     display: block;
 }
@@ -550,6 +556,16 @@ body[data-page="settings"] .showcase #page-settings {
    in turn grow to fill the space this element just claimed) — see
    "TICKETS LIST" rules further below. */
 body[data-page="tickets"] .showcase #page-tickets {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    flex-direction: column;
+}
+
+/* Utilities page — same flex/height treatment as Tickets, since it
+   also holds a .tickets-list-style table (the user-accounts table)
+   that needs to grow and fill the remaining showcase height. */
+body[data-page="utilities"] .showcase #page-utilities {
     display: flex;
     flex: 1;
     min-height: 0;
@@ -862,7 +878,12 @@ body[data-page="tickets"] .showcase #page-tickets {
     background-color: #fff;
     border-radius: 10px;
     margin: 0 15px 15px;
-    overflow: hidden;
+    /* FIX: overflow: hidden used to sit on this same element as the
+       box-shadow, which clipped the shadow itself — that's why this
+       card's shadow looked much fainter than .profile-card /
+       .settings-card even with an identical box-shadow value. Corner-
+       clipping now happens on .tickets-list-header's own top radius
+       instead (added below), so nothing here clips the shadow. */
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.10);
 }
 
@@ -878,6 +899,12 @@ body[data-page="tickets"] .showcase #page-tickets {
     align-items: center;
     padding: 16px 24px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+    background-color: #f5f5f5;
+    /* FIX: matches .tickets-list's own border-radius (10px) on the top
+       corners only, since this header no longer gets corner-clipped by
+       an overflow: hidden parent. Without this its square corners would
+       poke out past the card's rounded top edge. */
+    border-radius: 10px 10px 0 0;
 }
 
 /* Shared base styling for every column label in the header: gray,
@@ -977,6 +1004,22 @@ body[data-page="messages"] .showcase #page-messages {
 .ttcol-action   { flex: 0 0 18%; display: flex; justify-content: flex-end; }
 
 /* ====================================================================
+ * ADMIN UTILITIES — USER ACCOUNTS TABLE COLUMNS (.ucol-*)
+ * ==================================================================== */
+.ucol-id     { flex: 0 0 7%; }
+.ucol-name   { flex: 0 0 20%; text-align: center; }
+.ucol-email  {
+    flex: 0 0 20%;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.ucol-role   { flex: 0 0 15%; text-align: center; }
+.ucol-status { flex: 0 0 13%; text-align: center; }
+.ucol-action { flex: 0 0 25%; display: flex; justify-content: center; gap: 8px; }
+
+/* ====================================================================
  * TICKET FILTER TABS
  * ==================================================================== */
 .tickets-filter-tabs {
@@ -1034,6 +1077,20 @@ body[data-page="messages"] .showcase #page-messages {
 .status-badge.processing { background-color: #FF8D28; }
 .status-badge.resolved   { background-color: #34C759; }
 .status-badge.pending    { background-color: #818181; }
+
+/* Account status (Utilities user table) — separate names from the
+   ticket-status modifiers above (ongoing/processing/resolved/pending)
+   since "active"/"inactive" describes something different: whether
+   the account can log in, not where a ticket is in its lifecycle. */
+.status-badge.active-account   { background-color: #34C759; }
+.status-badge.inactive-account { background-color: #818181; }
+
+/* FIX: same specificity issue as .profile-role-badge below — the
+   plain .status-badge rule's color: #fff was being silently overridden
+   by .ticket-row span { color: #1a1a1a } (Utilities table), which has
+   higher specificity. This selector wins that fight so "Active" /
+   "Pending" text actually renders white as designed. */
+.ticket-row .status-badge { color: #fff; }
 
 /* ====================================================================
  * PRIORITY BADGE
@@ -1104,6 +1161,176 @@ body[data-page="messages"] .showcase #page-messages {
 }
 
 /* ====================================================================
+ * DELETE BUTTON (admin — outlined, destructive)
+ * ------------------------------------------------------------------
+ * Same outlined shape as .btn-update-status so the three action
+ * buttons (Edit / Activate-Deactivate / Delete) read as one visual
+ * group, but in the standard red/danger color rather than the
+ * brand maroon, since deleting an account is irreversible.
+ * ==================================================================== */
+.btn-delete {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background-color: transparent;
+    color: #c0392b;
+    border: 1.5px solid #c0392b;
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: "Inter";
+    transition: 0.2s ease-in-out;
+    white-space: nowrap;
+}
+.btn-delete:hover {
+    background-color: #c0392b;
+    color: #f5f5f5;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* ====================================================================
+ * LIVE-UPDATE ROW HIGHLIGHT (Utilities tab)
+ * ------------------------------------------------------------------
+ * Applied by utilities_live.js to a row that just appeared in the
+ * account list since the last poll (e.g. a brand-new pending
+ * self-signup), so it's easy to notice without needing a full page
+ * reload. Fades back to normal on its own after a couple seconds.
+ * ==================================================================== */
+.ticket-row.row-new {
+    animation: utilitiesRowHighlight 2.5s ease-out;
+}
+@keyframes utilitiesRowHighlight {
+    0% { background-color: #fdf0d5; }
+    100% { background-color: transparent; }
+}
+
+/* ====================================================================
+ * UTILITIES — success/error notice banners
+ * ====================================================================
+ * Shown after redirecting back from user_admin_mngmnt.php following
+ * an add/edit/activate/deactivate action.
+ */
+.utilities-notice {
+    background-color: #eafaf0;
+    color: #1a7a3c;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 15px 12px;
+}
+.utilities-notice-error {
+    background-color: #fdeceb;
+    color: #a4231a;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 15px 12px;
+}
+
+/* ====================================================================
+ * UTILITIES — Add / Edit User form card
+ * ====================================================================
+ * Same white/rounded/shadow card language as .settings-card /
+ * .profile-card, with its own field styling modeled on ticket.php's
+ * .ticket-field inputs (light border, rounded, muted placeholder) —
+ * ticket.css itself isn't linked from admin.php, so these are defined
+ * fresh here rather than sharing that file across unrelated pages.
+ */
+.user-form-card {
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.10);
+    padding: 24px;
+    margin: 0 15px 15px;
+    max-width: 640px;
+}
+.user-form-card h2 {
+    font-size: 18px;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+}
+.user-form-card .form-subtitle {
+    font-size: 13px;
+    color: #787777;
+    margin-bottom: 20px;
+}
+.user-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.user-form-row {
+    display: flex;
+    gap: 16px;
+}
+.user-form-field {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.user-form-field label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+.user-form-field input,
+.user-form-field select {
+    width: 100%;
+    height: 42px;
+    padding: 0 14px;
+    border: 1px solid #d9d9d9;
+    border-radius: 8px;
+    outline: none;
+    font-size: 14px;
+    font-family: "Inter";
+    color: #1a1a1a;
+    background-color: #fafafa;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.user-form-field input:focus,
+.user-form-field select:focus {
+    border-color: #610107;
+    background-color: #fff;
+}
+.user-form-field small {
+    font-size: 12px;
+    color: #9c9c9c;
+}
+.user-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+/* Secondary/outline "Cancel" action for the form — same neutral-border
+   treatment as ticket.php's .btn-cancel-ticket, redefined here since
+   ticket.css isn't linked on this page. */
+.btn-cancel-user {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #fff;
+    color: #5a5a5a;
+    border: 1px solid #d9d9d9;
+    border-radius: 8px;
+    padding: 11px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s ease-in-out;
+}
+.btn-cancel-user:hover {
+    background-color: #f0f0f0;
+}
+
+/* ====================================================================
  * TICKET ROW
  * ==================================================================== */
 .ticket-row {
@@ -1115,31 +1342,7 @@ body[data-page="messages"] .showcase #page-messages {
     background-color: transparent;
 }
 .ticket-row:last-child { border-bottom: none; }
-.ticket-row:hover      { background-color: rgba(0, 0, 0, 0.02); }
 .ticket-row span       { font-size: 13px; color: #1a1a1a; }
-
-/* ====================================================================
- * COLOR PALETTE UNIFICATION
- * ====================================================================
- * Tickets list header + row hover tuned to sit on the white
- * .tickets-list background (merged directly into the base rule above).
- */
-
-/* Subtle gray header bar — distinguishes it from the white body */
-.tickets-list-header {
-    background-color: #f5f5f5;
-}
-
-/* Slightly darker hover on white rows (was rgba(255,255,255,0.55)
-   which doesn't show against a white bg) */
-.ticket-row:hover {
-    background-color: #f8f8f8;
-}
-
-/* Mailbox container — same shadow token as tickets-list */
-.mailbox-container {
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.10);
-}
 
 /* ====================================================================
  * USER MAILBOX — TWO-PANEL LAYOUT
@@ -1150,7 +1353,14 @@ body[data-page="messages"] .showcase #page-messages {
     min-height: 0;
     margin: 0 15px 15px;
     border-radius: 10px;
-    overflow: hidden;
+    /* FIX: this used to have overflow: hidden right alongside the
+       box-shadow, which clipped the shadow itself — same bug as
+       .tickets-list above, and the reason this card's shadow looked
+       much fainter than .profile-card / .settings-card despite an
+       identical box-shadow value. Corner-clipping now lives on
+       .mailbox-threads (left panel) and .mailbox-chat (right panel)
+       instead, so nothing here clips the shadow. */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.10);
 }
 .mailbox-threads {
     width: 300px;
@@ -1160,6 +1370,10 @@ body[data-page="messages"] .showcase #page-messages {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    /* FIX: rounds the left panel's own left-side corners to match
+       .mailbox-container's radius, now that the container no longer
+       clips it via overflow: hidden. */
+    border-radius: 10px 0 0 10px;
 }
 .mailbox-threads-header {
     display: flex;
@@ -1260,6 +1474,11 @@ body[data-page="messages"] .showcase #page-messages {
     background-color: #f5f5f5;
     display: flex;
     flex-direction: column;
+    /* FIX: rounds the right panel's own right-side corners to match
+       .mailbox-container's radius, now that the container no longer
+       clips it via overflow: hidden. */
+    border-radius: 0 10px 10px 0;
+    overflow: hidden;
 }
 .mailbox-chat-empty {
     flex: 1;
@@ -1390,3 +1609,355 @@ body[data-page="messages"] .showcase #page-messages {
     color: var(--nav-text-color);
 }
 .mailbox-chat-send svg { width: 18px; height: 18px; }
+
+/* ====================================================================
+ * MY PROFILE (user.php) — identity, preferences, connected devices
+ * ====================================================================
+ * Distinct purpose from #page-settings below: this page is about WHO
+ * the account belongs to (name/email/phone, notification/language
+ * preferences, active sessions). Settings (further down) is about the
+ * app itself and how you sign in — nothing here overlaps with that.
+ *
+ * Like #page-settings, this is a normal top-aligned scrollable stack,
+ * so no body[data-page="profile"] flex/height override is needed.
+ */
+.profile-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 0 15px 15px;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* Cover card: centered large avatar + display name */
+.profile-cover-card {
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.10);
+    padding: 32px 24px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.profile-avatar-wrap {
+    position: relative;
+    width: 88px;
+    height: 88px;
+}
+.profile-avatar-lg {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    background-color: #d9d9d9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: 700;
+    color: #787777;
+}
+/* Small camera badge overlapping the bottom-right of the avatar,
+   for changing the profile photo. */
+.profile-avatar-edit {
+    position: absolute;
+    right: -2px;
+    bottom: -2px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background-color: #610107;
+    color: #fff;
+    border: 2px solid #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.2s ease-in-out;
+}
+.profile-avatar-edit svg { width: 14px; height: 14px; }
+.profile-avatar-edit:hover {
+    background-color: var(--nav-highlight-bg);
+    color: var(--nav-text-color);
+}
+.profile-display-name {
+    margin-top: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+/* Role badge — same pill shape as .status-badge / .priority-badge,
+   one color per role so the account type reads at a glance across
+   whichever dashboard (user / techn / admin) is showing it. */
+.profile-role-badge {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+}
+.profile-role-badge.role-user  { background-color: #00ABB1; }
+.profile-role-badge.role-techn { background-color: #FF8D28; }
+.profile-role-badge.role-admin { background-color: #610107; }
+
+/* FIX: .ticket-row span { color: #1a1a1a; } (used for the Utilities
+   table rows) has higher specificity than the plain .profile-role-badge
+   rule above (class+type beats a single class), so it was silently
+   winning and forcing the badge text back to dark — nearly invisible
+   against the dark maroon "Administrator" badge. This selector matches
+   the badge specifically wherever it sits inside a .ticket-row, giving
+   it enough specificity to keep the white text the badge was already
+   designed to have.
+   */
+.ticket-row .profile-role-badge { color: #fff; }
+
+/* Personal Information + Contact Preferences, side by side */
+.profile-row {
+    display: flex;
+    gap: 15px;
+}
+.profile-card {
+    flex: 1;
+    min-width: 0;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.10);
+    padding: 20px 24px;
+}
+.profile-card h2 {
+    font-size: 15px;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin-bottom: 14px;
+}
+.profile-card-subtitle {
+    font-size: 13px;
+    color: #787777;
+    margin-top: -10px;
+    margin-bottom: 14px;
+}
+.profile-card-full { width: 100%; }
+
+/* Personal Information rows: icon + stacked label/value + edit pencil */
+.profile-info-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+.profile-info-row:last-child { border-bottom: none; padding-bottom: 0; }
+.profile-info-row > svg { color: #9c9c9c; flex-shrink: 0; }
+.profile-info-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.profile-info-label { font-size: 12px; color: #9c9c9c; }
+.profile-info-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a1a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+/* Honest empty-state modifier for registered fields with no value yet
+   (e.g. Phone Number — not a column the users table has). Muted +
+   italic so it reads as "nothing set" rather than real data. */
+.profile-info-value.profile-info-empty {
+    color: #9c9c9c;
+    font-style: italic;
+    font-weight: 500;
+}
+.profile-info-edit {
+    background: none;
+    border: none;
+    color: #9c9c9c;
+    cursor: pointer;
+    flex-shrink: 0;
+    padding: 6px;
+    border-radius: 6px;
+    display: flex;
+    transition: 0.15s ease-in-out;
+}
+.profile-info-edit:hover {
+    background-color: #f5f5f5;
+    color: #610107;
+}
+
+/* Contact Preferences rows: icon + label + toggle/select control */
+.profile-pref-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+.profile-pref-row:last-child { border-bottom: none; padding-bottom: 0; }
+.profile-pref-row > svg { color: #9c9c9c; flex-shrink: 0; }
+.profile-pref-label {
+    flex: 1;
+    font-size: 14px;
+    color: #1a1a1a;
+}
+.profile-pref-select {
+    height: 34px;
+    padding: 0 10px;
+    border: 1px solid #d9d9d9;
+    border-radius: 6px;
+    outline: none;
+    font-size: 13px;
+    font-family: "Inter";
+    color: #1a1a1a;
+    background-color: #fafafa;
+    cursor: pointer;
+}
+
+/* Connected Devices — empty state (no sessions/devices table exists,
+   so there's nothing real to list). No icon — this app has no other
+   use for a monitor/device glyph yet, so it's just muted subtext,
+   matching .profile-card-subtitle's look rather than a boxed
+   icon+message empty state. */
+.device-empty-state p {
+    margin: 0;
+    font-size: 13px;
+    color: #787777;
+}
+
+/* Toggle switch — pure-CSS pill/slider driven by a hidden checkbox,
+   used for the notification toggles above. */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 22px;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.toggle-slider {
+    position: absolute;
+    inset: 0;
+    background-color: #d9d9d9;
+    border-radius: 22px;
+    transition: 0.2s ease-in-out;
+}
+.toggle-slider::before {
+    content: "";
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    left: 3px;
+    top: 3px;
+    background-color: #fff;
+    border-radius: 50%;
+    transition: 0.2s ease-in-out;
+}
+.toggle-switch input:checked + .toggle-slider {
+    background-color: #610107;
+}
+.toggle-switch input:checked + .toggle-slider::before {
+    transform: translateX(18px);
+}
+
+/* ====================================================================
+ * SETTINGS (user.php) — Appearance + Sign-In Methods
+ * ====================================================================
+ * App-level page, distinct from My Profile above: Appearance controls
+ * how the app looks; Security/Sign-In Methods controls how the
+ * account is accessed. No identity fields live here.
+ */
+.settings-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 0 15px 15px;
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+/* Card shell — same white/rounded/shadow treatment used across the
+   dashboard (.status-card, .tickets-list, .profile-card, etc). */
+.settings-card {
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.10);
+    padding: 24px;
+}
+.settings-card-header { margin-bottom: 4px; }
+.settings-card-header h2 {
+    font-size: 18px;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+}
+.settings-card-header p {
+    font-size: 13px;
+    color: #787777;
+}
+
+/* Appearance rows: label left, dropdown right */
+.settings-pref-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+.settings-pref-row-last { border-bottom: none; padding-bottom: 0; }
+.settings-pref-label { font-size: 14px; color: #1a1a1a; }
+.settings-pref-select {
+    height: 36px;
+    padding: 0 12px;
+    border: 1px solid #d9d9d9;
+    border-radius: 6px;
+    outline: none;
+    font-size: 13px;
+    font-family: "Inter";
+    color: #1a1a1a;
+    background-color: #fafafa;
+    cursor: pointer;
+    min-width: 140px;
+}
+
+.settings-subheading {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-top: 16px;
+}
+.settings-subtitle {
+    font-size: 13px;
+    color: #787777;
+    margin-top: 4px;
+    margin-bottom: 14px;
+}
+
+/* Sign-in method rows — light gray rounded rows, each a navigable
+   link to its own (future) configuration screen. */
+.security-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background-color: #f5f5f5;
+    border-radius: 8px;
+    padding: 13px 16px;
+    margin-bottom: 8px;
+    color: #1a1a1a;
+    transition: background-color 0.15s ease;
+}
+.security-row-last { margin-bottom: 0; }
+.security-row:hover { background-color: #ececec; }
+.security-row svg { color: #787777; flex-shrink: 0; }
+.security-row-label { font-size: 14px; font-weight: 500; }

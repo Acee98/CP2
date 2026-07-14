@@ -1,10 +1,97 @@
+<?php
+/**
+ * admin.php — top-of-file PHP
+ * ----------------------------------------------------------------------
+ * Same session-guard pattern as user.php: only a logged-in admin may
+ * load this page. Also pulls in the DB connection and, specifically
+ * for the Utilities tab, the full user-accounts list plus whatever
+ * view state the URL asks for (?action=add, ?edit_id=N), and any
+ * success/error message left by user_admin_mngmnt.php after an
+ * add/edit/activate/deactivate action.
+ */
+// Session setup centralized in session_config.php (dedicated session
+// storage folder + consistent cookie config across every session-using
+// page) — see that file for details.
+require_once '../logic/session_config.php';
+require_once '../logic/config.php';
+
+if (!isset($_SESSION['email']) || ($_SESSION['role'] ?? '') !== 'admin') {
+    header("Location: ../pages/login_signup.php");
+    exit();
+}
+
+$first_name = $_SESSION['first_name'];
+$last_name  = $_SESSION['last_name'];
+$initials   = strtoupper(substr($first_name, 0, 1) . substr($last_name, 0, 1));
+
+// One-shot session messages from user_admin_mngmnt.php (add/edit/
+// activate/deactivate results) — read once, then cleared, same as the
+// login/signup error pattern in login_signup.php.
+$utilities_success = $_SESSION['utilities_success'] ?? '';
+$utilities_error   = $_SESSION['utilities_error'] ?? '';
+unset($_SESSION['utilities_success'], $_SESSION['utilities_error']);
+
+// View state for the Utilities tab, driven entirely by the query
+// string so a redirect back here after a POST can land on the right
+// view (list / add form / edit form) without needing JS state.
+$utilities_action = $_GET['action'] ?? '';
+$utilities_edit_id = isset($_GET['edit_id']) ? (int) $_GET['edit_id'] : 0;
+
+// The account currently being edited, if any — fetched fresh from the
+// DB (not trusted from the URL) so the edit form always shows real
+// current values.
+$editing_user = null;
+if ($utilities_edit_id > 0) {
+    $editStmt = $conn->prepare("SELECT id, first_name, last_name, email, role FROM users WHERE id = ?");
+    if ($editStmt === false) {
+        // Surfaced rather than silently skipped — a failed prepare()
+        // here used to just mean the edit form quietly showed nothing,
+        // giving no indication anything was wrong.
+        $utilities_error = 'Could not load that account: ' . $conn->error;
+    } else {
+        $editStmt->bind_param("i", $utilities_edit_id);
+        $editStmt->execute();
+        $editStmt->bind_result($eu_id, $eu_first, $eu_last, $eu_email, $eu_role);
+        if ($editStmt->fetch()) {
+            $editing_user = compact('eu_id', 'eu_first', 'eu_last', 'eu_email', 'eu_role');
+        }
+        $editStmt->close();
+    }
+}
+
+// Full user-accounts list for the Utilities table. Ordered by status
+// (inactive/pending-approval first) so accounts waiting on an admin
+// are the first thing visible, not buried below everyone already
+// active.
+//
+// IMPORTANT: $conn->query() returns `false` (not an exception) on a
+// SQL error — most likely here because the `id` column referenced
+// below doesn't exist yet (see the migration note in
+// user_admin_mngmnt.php). Silently treating that the same as "zero
+// rows" is exactly why newly created/pending accounts could appear to
+// just never show up here: a failed query and an empty table look
+// identical unless the failure is actually surfaced.
+$all_users = [];
+$usersResult = $conn->query(
+    "SELECT id, first_name, last_name, email, role, status FROM users ORDER BY (status = 'active'), id"
+);
+if ($usersResult === false) {
+    $utilities_error = 'Could not load user accounts: ' . $conn->error;
+} else {
+    while ($row = $usersResult->fetch_assoc()) {
+        $all_users[] = $row;
+    }
+}
+
+$role_labels = ['user' => 'User', 'techn' => 'Technician', 'admin' => 'Administrator'];
+?>
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../css/main_interface.css?v=1.3">
+    <link rel="stylesheet" href="../css/main_interface.css?v=1.10">
     <title>ZPGC Services | Administrator</title>
 </head>
 
@@ -148,7 +235,7 @@
                             </svg>
                             <input type="search" class="search-bar" placeholder="Search..." aria-label="Search">
                         </div>
-                        <div class="profile-circle"></div>
+                        <div class="profile-circle"><?= htmlspecialchars($initials) ?></div>
                     </header>
                 </div>
 
@@ -253,7 +340,7 @@
                             </svg>
                             <input type="search" class="search-bar" placeholder="Search..." aria-label="Search">
                         </div>
-                        <div class="profile-circle"></div>
+                        <div class="profile-circle"><?= htmlspecialchars($initials) ?></div>
                     </header>
                 </div>
 
@@ -318,6 +405,25 @@
 
             <!-- ============================================================
                  UTILITIES — body[data-page="utilities"]
+                 ------------------------------------------------------------
+                 Maps to FR4 ("administrators shall manage user accounts —
+                 add, edit, deactivate"), the paper's own High-priority,
+                 still-unbuilt requirement. Mirrors the Tickets page's
+                 toolbar + table structure/classes 1:1 for visual
+                 consistency, just with user-account columns instead of
+                 ticket columns, and no backend wiring yet (same "empty
+                 state until real data exists" phase every other list in
+                 this app is currently in).
+                 ============================================================ -->
+            <!-- ============================================================
+                 UTILITIES — body[data-page="utilities"]
+                 ------------------------------------------------------------
+                 Maps to FR4 ("administrators shall manage user accounts —
+                 add, edit, deactivate"). View state (list / add form / edit
+                 form) is driven by ?action= and ?edit_id= in the URL rather
+                 than JS, so a redirect back here after a POST to
+                 user_admin_mngmnt.php can land on the right view with no
+                 client-side state to keep in sync.
                  ============================================================ -->
             <div class="page-content" id="page-utilities">
                 <div class="head">
@@ -332,10 +438,212 @@
                             </svg>
                             <input type="search" class="search-bar" placeholder="Search..." aria-label="Search">
                         </div>
-                        <div class="profile-circle"></div>
+                        <div class="profile-circle"><?= htmlspecialchars($initials) ?></div>
                     </header>
                 </div>
+
+                <?php if ($utilities_success): ?>
+                    <div class="utilities-notice"><?= htmlspecialchars($utilities_success) ?></div>
+                <?php endif; ?>
+                <?php if ($utilities_error): ?>
+                    <div class="utilities-notice-error"><?= htmlspecialchars($utilities_error) ?></div>
+                <?php endif; ?>
+
+                <?php if ($utilities_action === 'add'): ?>
+                    <!-- ADD USER FORM -->
+                    <div class="user-form-card">
+                        <h2>Add User</h2>
+                        <p class="form-subtitle">Create a new account directly — it's active immediately, no approval step needed.</p>
+                        <form class="user-form" action="../logic/user_admin_mngmnt.php" method="post">
+                            <div class="user-form-row">
+                                <div class="user-form-field">
+                                    <label for="add_first_name">First Name</label>
+                                    <input type="text" id="add_first_name" name="first_name" required>
+                                </div>
+                                <div class="user-form-field">
+                                    <label for="add_last_name">Last Name</label>
+                                    <input type="text" id="add_last_name" name="last_name" required>
+                                </div>
+                            </div>
+                            <div class="user-form-field">
+                                <label for="add_email">Email Address</label>
+                                <input type="email" id="add_email" name="email" required>
+                            </div>
+                            <div class="user-form-row">
+                                <div class="user-form-field">
+                                    <label for="add_role">Role</label>
+                                    <select id="add_role" name="role" required>
+                                        <option value="" disabled selected>Select a role</option>
+                                        <option value="user">User</option>
+                                        <option value="techn">Technician</option>
+                                        <option value="admin">Administrator</option>
+                                    </select>
+                                </div>
+                                <div class="user-form-field">
+                                    <label for="add_password">Temporary Password</label>
+                                    <input type="password" id="add_password" name="password" minlength="8" required>
+                                    <small>At least 8 characters. Share this with the user directly.</small>
+                                </div>
+                            </div>
+                            <div class="user-form-actions">
+                                <a href="?tab=utilities" class="btn-cancel-user">Cancel</a>
+                                <button type="submit" name="add_user" class="btn-new-ticket">Create Account</button>
+                            </div>
+                        </form>
+                    </div>
+
+                <?php elseif ($editing_user): ?>
+                    <!-- EDIT USER FORM -->
+                    <div class="user-form-card">
+                        <h2>Edit User</h2>
+                        <p class="form-subtitle">Update this account's name, email, or role.</p>
+                        <form class="user-form" action="../logic/user_admin_mngmnt.php" method="post">
+                            <input type="hidden" name="id" value="<?= (int) $editing_user['eu_id'] ?>">
+                            <div class="user-form-row">
+                                <div class="user-form-field">
+                                    <label for="edit_first_name">First Name</label>
+                                    <input type="text" id="edit_first_name" name="first_name"
+                                        value="<?= htmlspecialchars($editing_user['eu_first']) ?>" required>
+                                </div>
+                                <div class="user-form-field">
+                                    <label for="edit_last_name">Last Name</label>
+                                    <input type="text" id="edit_last_name" name="last_name"
+                                        value="<?= htmlspecialchars($editing_user['eu_last']) ?>" required>
+                                </div>
+                            </div>
+                            <div class="user-form-field">
+                                <label for="edit_email">Email Address</label>
+                                <input type="email" id="edit_email" name="email"
+                                    value="<?= htmlspecialchars($editing_user['eu_email']) ?>" required>
+                            </div>
+                            <div class="user-form-field">
+                                <label for="edit_role">Role</label>
+                                <select id="edit_role" name="role" required>
+                                    <?php foreach (['user' => 'User', 'techn' => 'Technician', 'admin' => 'Administrator'] as $val => $label): ?>
+                                        <option value="<?= $val ?>" <?= $editing_user['eu_role'] === $val ? 'selected' : '' ?>><?= $label ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="user-form-actions">
+                                <a href="?tab=utilities" class="btn-cancel-user">Cancel</a>
+                                <button type="submit" name="edit_user" class="btn-new-ticket">Save Changes</button>
+                            </div>
+                        </form>
+                    </div>
+
+                <?php else: ?>
+                    <!--
+                        Toolbar: filter tabs by role on the left, "Add User" on
+                        the right — same layout as the Tickets toolbar, reusing
+                        .tickets-toolbar / .tickets-filter-tabs / .filter-tab /
+                        .btn-new-ticket as-is. Filter tabs are still visual-only
+                        (matching the Tickets toolbar's current state) — not
+                        wired to actually filter the table yet.
+                    -->
+                    <div class="tickets-toolbar">
+                        <div class="tickets-filter-tabs" id="utilities-filter-tabs">
+                            <button class="filter-tab active-tab" data-filter="all">All</button>
+                            <button class="filter-tab" data-filter="user">User</button>
+                            <button class="filter-tab" data-filter="techn">Technician</button>
+                            <button class="filter-tab" data-filter="admin">Administrator</button>
+                            <button class="filter-tab" data-filter="pending">Pending Approval</button>
+                        </div>
+                        <a href="?tab=utilities&action=add" class="btn-new-ticket">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor"
+                                viewBox="0 0 24 24">
+                                <path d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2z"></path>
+                            </svg>
+                            Add User
+                        </a>
+                    </div>
+
+                    <!--
+                        User accounts table — real data from the `users`
+                        table. Role cell reuses .profile-role-badge (same
+                        badge as the Profile page); Status cell uses
+                        .status-badge.active-account / .inactive-account
+                        (accounts start 'inactive' from public self-signup
+                        per user_mngmnt.php's admin-approval gating, and
+                        stay that way until Activated here); Actions reuses
+                        .btn-assign (Edit, filled) and .btn-update-status
+                        (Activate/Deactivate, outlined) — the same two
+                        action-button styles already used elsewhere.
+                    -->
+                    <div class="tickets-list">
+                        <div class="tickets-list-header">
+                            <span class="ucol-id">ID</span>
+                            <span class="ucol-name">Name</span>
+                            <span class="ucol-email">Email</span>
+                            <span class="ucol-role">Role</span>
+                            <span class="ucol-status">Status</span>
+                            <span class="ucol-action">Actions</span>
+                        </div>
+                        <div class="tickets-list-body" id="utilities-users-body">
+                            <?php if (empty($all_users)): ?>
+                                <div class="tickets-empty-state">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <!--Boxicons v3.0.8 https://boxicons.com | License https://docs.boxicons.com/free-->
+                                        <path
+                                            d="M12 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3m0-4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1M12 13c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4m-6 5v-.99c.2-.72 3.3-2.01 6-2.01s5.8 1.29 6 2v1z">
+                                        </path>
+                                        <path
+                                            d="M17.24 12.02c1.7.6 3.76 1.83 3.76 2.98v3h-3v-3.03c0-1.24-.51-2.24-1.31-3.01.19.02.37.04.55.06">
+                                        </path>
+                                        <path
+                                            d="M16.5 8.5c0-1.32-.4-2.53-1.09-3.49.19-.01.39-.01.59-.01 1.93 0 3.5 1.57 3.5 3.5S17.93 12 16 12c-.2 0-.4 0-.59-.01.69-.96 1.09-2.17 1.09-3.49">
+                                        </path>
+                                    </svg>
+                                    <p>No user accounts found.</p>
+                                </div>
+                            <?php else: ?>
+                                <?php foreach ($all_users as $u): ?>
+                                    <?php
+                                        $isActive = $u['status'] === 'active';
+                                        $roleLabel = $role_labels[$u['role']] ?? ucfirst($u['role']);
+                                    ?>
+                                    <div class="ticket-row" data-role="<?= htmlspecialchars($u['role']) ?>" data-status="<?= htmlspecialchars($u['status']) ?>">
+                                        <span class="ucol-id">#<?= (int) $u['id'] ?></span>
+                                        <span class="ucol-name"><?= htmlspecialchars($u['first_name'] . ' ' . $u['last_name']) ?></span>
+                                        <span class="ucol-email"><?= htmlspecialchars($u['email']) ?></span>
+                                        <span class="ucol-role">
+                                            <span class="profile-role-badge role-<?= htmlspecialchars($u['role']) ?>"><?= htmlspecialchars($roleLabel) ?></span>
+                                        </span>
+                                        <span class="ucol-status">
+                                            <span class="status-badge <?= $isActive ? 'active-account' : 'inactive-account' ?>">
+                                                <?= $isActive ? 'Active' : 'Pending' ?>
+                                            </span>
+                                        </span>
+                                        <span class="ucol-action">
+                                            <a href="?tab=utilities&edit_id=<?= (int) $u['id'] ?>" class="btn-assign">Edit</a>
+                                            <form action="../logic/user_admin_mngmnt.php" method="post">
+                                                <input type="hidden" name="id" value="<?= (int) $u['id'] ?>">
+                                                <input type="hidden" name="status" value="<?= $isActive ? 'inactive' : 'active' ?>">
+                                                <button type="submit" name="set_status" class="btn-update-status">
+                                                    <?= $isActive ? 'Deactivate' : 'Activate' ?>
+                                                </button>
+                                            </form>
+                                            <?php
+                                                $deleteConfirmName = htmlspecialchars(
+                                                    json_encode($u['first_name'] . ' ' . $u['last_name']),
+                                                    ENT_QUOTES
+                                                );
+                                            ?>
+                                            <form action="../logic/user_admin_mngmnt.php" method="post"
+                                                onsubmit="return confirm('Permanently delete ' + <?= $deleteConfirmName ?> + '\'s account? This can\'t be undone.');">
+                                                <input type="hidden" name="id" value="<?= (int) $u['id'] ?>">
+                                                <button type="submit" name="delete_user" class="btn-delete">Delete</button>
+                                            </form>
+                                        </span>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
             </div>
+            <!-- /page-utilities -->
 
 
             <!-- ============================================================
@@ -354,7 +662,7 @@
                             </svg>
                             <input type="search" class="search-bar" placeholder="Search..." aria-label="Search">
                         </div>
-                        <div class="profile-circle"></div>
+                        <div class="profile-circle"><?= htmlspecialchars($initials) ?></div>
                     </header>
                 </div>
             </div>
@@ -376,7 +684,7 @@
                             </svg>
                             <input type="search" class="search-bar" placeholder="Search..." aria-label="Search">
                         </div>
-                        <div class="profile-circle"></div>
+                        <div class="profile-circle"><?= htmlspecialchars($initials) ?></div>
                     </header>
                 </div>
 
@@ -431,7 +739,7 @@
                             </svg>
                             <input type="search" class="search-bar" placeholder="Search..." aria-label="Search">
                         </div>
-                        <div class="profile-circle"></div>
+                        <div class="profile-circle"><?= htmlspecialchars($initials) ?></div>
                     </header>
                 </div>
             </div>
@@ -439,7 +747,9 @@
         </section>
     </main>
 
-    <script src="../js/behavior.js?v=1.3"></script>
+    <script src="../js/behavior.js?v=1.9"></script>
+    <script src="../js/utilities_filter.js"></script>
+    <script src="../js/utilities_live.js"></script>
 </body>
 
 </html>

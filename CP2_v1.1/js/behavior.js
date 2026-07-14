@@ -57,7 +57,12 @@ function setSelectedNavItem(item) {
 }
 
 /**
- * On load, keeps an existing .selected item or defaults to Dashboard.
+ * On load, prefers a ?tab=<data-nav> query param (used by admin.php's
+ * Utilities actions — user_admin_mngmnt.php redirects back to
+ * admin.php?tab=utilities after add/edit/activate/deactivate, so the
+ * sidebar should land on Utilities rather than resetting to
+ * Dashboard). Falls back to an existing .selected item, then
+ * Dashboard, same as before.
  */
 function initNavSelection() {
     const navList = document.querySelector('.nav-list');
@@ -65,7 +70,11 @@ function initNavSelection() {
         return;
     }
 
-    const selectedItem = navList.querySelector('.nav-list-item.selected')
+    const tabParam = new URLSearchParams(window.location.search).get('tab');
+    const tabItem = tabParam ? navList.querySelector(`[data-nav="${tabParam}"]`) : null;
+
+    const selectedItem = tabItem
+        || navList.querySelector('.nav-list-item.selected')
         || navList.querySelector('[data-nav="dashboard"]')
         || navList.querySelector('.nav-list-item:first-child');
 
